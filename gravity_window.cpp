@@ -178,10 +178,11 @@ Gravity_Draw::Gravity_Draw() :
 void Gravity_Draw::reset() {
 
     // set variables to initial values
-    pos         = {{  0,   0}, {  0, 100}, {100,   0}, { 100, 100}};
-    vel         = {{1.2,   0}, {  0,-1.2}, {  0, 1.2}, {-1.2,   0}};
-    mass        = {1.0, 1.0, 1.0, 1.0};
-    trails      = {{}, {}, {}, {}};
+    bodies      = { Body{ {  0,   0}, { 1.2,    0}, 1.0, {} },
+                    Body{ {  0, 100}, {   0, -1.2}, 1.0, {} },
+                    Body{ {100,   0}, {   0,  1.2}, 1.0, {} },
+                    Body{ {100, 100}, {-1.2,    0}, 1.0, {} } };
+                    
     zoom        = 1.0;
     centre      = {350, 320};
     traillength = 360;
@@ -190,10 +191,7 @@ void Gravity_Draw::reset() {
 void Gravity_Draw::clear() {
 
     // remove all bodies
-    pos    = {};
-    vel    = {};
-    mass   = {};
-    trails = {};
+    bodies = {};
 
     // set background to white causing a flash upon clearing bodies
     background = {1.0, 1.0, 1.0};
@@ -217,28 +215,28 @@ bool Gravity_Draw::on_draw(const Cairo::RefPtr<Cairo::Context>& cr) {
     cr -> set_line_cap(Cairo::LINE_CAP_ROUND);
 
     // for each body, draw the trail
-    for(int i = 0; i<pos.size(); i++) {
+    for(Body &body : bodies) {
 
         cr -> set_source_rgb(1.0, 1.0, 1.0);
         cr -> set_line_width(1*zoom);
-        cr -> move_to(centre[0] + trails[i][0][0]*zoom, centre[1] + trails[i][0][1]*zoom);
+        cr -> move_to(centre[0] + body.trail[0][0]*zoom, centre[1] + body.trail[0][1]*zoom);
 
         cr -> set_source_rgba(1.0, 1.0, 1.0, 0.65);
-        int trail_actual_length = trails[i].size();
+        int trail_actual_length = body.trail.size();
 
         for(int j = 0; j<trail_actual_length-1; j++) {
 
-            cr -> line_to(centre[0] + trails[i][j+1][0]*zoom, centre[1] + trails[i][j+1][1]*zoom);
+            cr -> line_to(centre[0] + body.trail[j+1][0]*zoom, centre[1] + body.trail[j+1][1]*zoom);
         }
 
         cr -> stroke();
     }
 
     // for each body, draw the body
-    for(int i = 0; i<pos.size(); i++) {
+    for(Body &body : bodies) {
 
         cr -> set_line_width(5*zoom);
-        cr -> arc(centre[0] + pos[i][0]*zoom, centre[1] + pos[i][1]*zoom, 10*mass[i]*zoom, 0, M_PI*2);
+        cr -> arc(centre[0] + body.pos[0]*zoom, centre[1] + body.pos[1]*zoom, 10*body.mass*zoom, 0, M_PI*2);
         cr -> set_source_rgb(0.0, 0.0, 0.0);
         cr -> fill_preserve();
         cr -> set_source_rgb(0.4, 0.8, 0.1);
@@ -329,10 +327,7 @@ bool Gravity_Draw::on_button_release_event(GdkEventButton * button_event) {
         double dy = (mouse_info.y - mouse_info.click_y)/50;
 
         // add new body by adding new element to vectors storing body info
-        pos.push_back({nx, ny});
-        vel.push_back({dx, dy});
-        mass.push_back(mouse_info.click_time);
-        trails.push_back({});
+        bodies.push_back( Body{ {nx,ny}, {dx, dy}, mouse_info.click_time, {} } );
 
         // store mouse info
         mouse_info.clicked    = false;
@@ -373,17 +368,17 @@ void Gravity_Draw::framerate_changed() {
 void Gravity_Draw::store_trails() {
 
     // for each body...
-    for(int i = 0; i<pos.size(); i++) {
+    for(Body &body : bodies) {
 
         // push current position onto the front of the deque
-        trails[i].push_front(pos[i]);
+        body.trail.push_front(body.pos);
 
         // if the length of the deque is greater than the desired trail length, remove an item from the end of the deque
         // using a loop to remove up to 3 items
         for(int j = 0; j<3; j++) {
-            if(trails[i].size() > traillength) {
+            if(body.trail.size() > traillength) {
     
-                trails[i].pop_back();
+                body.trail.pop_back();
             }
         }
     }
@@ -392,69 +387,74 @@ void Gravity_Draw::store_trails() {
 void Gravity_Draw::gravity() {
 
     // for each combination of bodies...
-    for(int i1 = 0; i1 < pos.size(); i1++) {
-        for(int i2 = i1+1; i2 < pos.size(); i2++) {
+    for(int i1 = 0; i1 < bodies.size(); i1++) {
 
-            double dx   = pos[i1][0]-pos[i2][0]; // x distance
-            double dy   = pos[i1][1]-pos[i2][1]; // y distance
-            double d    = sqrt( dx*dx + dy*dy ); // total distance
+        Body &body1       = bodies[i1];
+        
+        for(int i2 = i1+1; i2 < bodies.size(); i2++) {
+
+            Body &body2   = bodies[i2];
+
+            double dx     = body1.pos[0]-body2.pos[0]; // x distance
+            double dy     = body1.pos[1]-body2.pos[1]; // y distance
+            double d      = sqrt( dx*dx + dy*dy );     // total distance
 
             // if distance > 2000, skip calculations
             if(d > 2000) { continue; } 
 
             // force on each body
-            double f    = 100 * mass[i1]*mass[i2] / (d*d); 
+            double f      = 100 * body1.mass*body2.mass / (d*d); 
          
-            double s    = dy/d; // sine of angle
-            double c    = dx/d; // cosine of angle
+            double s      = dy/d; // sine of angle
+            double c      = dx/d; // cosine of angle
           
-            vel[i1][0] -= f*c/mass[i1] * 60/framerate * timescale; // applying accelaration to bodies
-            vel[i1][1] -= f*s/mass[i1] * 60/framerate * timescale;    
-            vel[i2][0] += f*c/mass[i2] * 60/framerate * timescale;
-            vel[i2][1] += f*s/mass[i2] * 60/framerate * timescale;
+            body1.vel[0] -= f*c/body1.mass * 60/framerate * timescale; // applying accelaration to bodies 
+            body1.vel[1] -= f*s/body1.mass * 60/framerate * timescale;    
+            body2.vel[0] += f*c/body2.mass * 60/framerate * timescale;
+            body2.vel[1] += f*s/body2.mass * 60/framerate * timescale;
         }
             
-        pos[i1][0] += vel[i1][0] * 60/framerate * timescale; // move body by velocity
-        pos[i1][1] += vel[i1][1] * 60/framerate * timescale;
+        body1.pos[0] += body1.vel[0] * 60/framerate * timescale; // move body by velocity
+        body1.pos[1] += body1.vel[1] * 60/framerate * timescale;
     }
 }
 
 void Gravity_Draw::join() {
 
-    for(int i1 = 0; i1 < pos.size(); i1++) {
-        for(int i2 = i1+1; i2 < pos.size(); i2++) {
+    for(int i1 = 0; i1 < bodies.size(); i1++) {
+        for(int i2 = i1+1; i2 < bodies.size(); i2++) {
 
-            double dx     = pos[i1][0]-pos[i2][0]; // x distance
-            double dy     = pos[i1][1]-pos[i2][1]; // y distance
-            double d      = sqrt( dx*dx + dy*dy ); // total distance
+            Body &body1   = bodies[i1];
+            Body &body2   = bodies[i2];
+
+            double dx     = body1.pos[0]-body2.pos[0]; // x distance
+            double dy     = body1.pos[1]-body2.pos[1]; // y distance
+            double d      = sqrt( dx*dx + dy*dy );     // total distance
 
             // if the distance between the centres is smaller than the sum of the radii of the bodies they collide
-            if(d < 10*(mass[i1] + mass[i2])) {
+            if(d < 10*(body1.mass + body2.mass)) {
 
                 // calculate x and y momentum
-                double px = mass[i1]*vel[i1][0] + mass[i2]*vel[i2][0];
-                double py = mass[i1]*vel[i1][1] + mass[i2]*vel[i2][1];
+                double px = body1.mass*body1.vel[0] + body2.mass*body2.vel[0];
+                double py = body1.mass*body1.vel[1] + body2.mass*body2.vel[1];
             
                 // total mass
-                double m  = mass[i1] + mass[i2];
+                double m  = body1.mass + body2.mass;
             
                 // conservation of momentum
                 double vx = px/m;
                 double vy = py/m;
 
-                // l is index of larger body and s is index of smaller body - larger absorbs smaller
-                int l     = (mass[i1] == std::max(mass[i1], mass[i2])) ? i1 : i2;
-                int s     = (l == i1) ? i2 : i1;
+                // big is the larger body and s is the smaller body's index in bodies vector - larger absorbs smaller
+                Body &big = (body1.mass > body2.mass) ? body1 : body2;
+                int  s    = (body1.mass < body2.mass) ? i1    : i2;
             
-                // set new values in mass and vel vectors
-                mass[l]   = m;
-                vel[l]    = {vx, vy};
+                // set new values in mass and vel vectors - bugged
+                big.mass  = m;
+                big.vel   = {vx, vy};
             
                 // erase values associated with absorbed body
-                pos.erase(    pos.begin()    + s );
-                vel.erase(    vel.begin()    + s );
-                mass.erase(   mass.begin()   + s );
-                trails.erase( trails.begin() + s );
+                bodies.erase(bodies.begin() + s);
             }
         }
     }

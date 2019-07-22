@@ -26,6 +26,14 @@ struct Mouse_Info {
     double  click_time; // time for which right click has been held
 };
 
+struct Body {
+
+    std::array<double, 2> pos;
+    std::array<double, 2> vel;
+    double mass;
+    std::deque<std::array<double, 2>> trail;
+};
+
 class Gravity_Draw: public Gtk::DrawingArea {
 
 public:
@@ -52,11 +60,7 @@ public:
     double timescale; // scaling of simulation time
 
 protected:
-    std::vector<std::array<double, 2>>  pos;                // positions of all bodies
-    std::vector<std::array<double, 2>>  vel;                // velocities of all bodies
-    std::vector<double>                 mass;               // masses of all bodies
-    std::vector<std::deque< 
-                std::array<double, 2>>> trails;             // stores data for the bodies' trails
+    std::vector<Body>                   bodies;             // vector of bodies
     std::vector<double>                 centre;             // coordinates of origin - used for drawing
     std::vector<double>                 background;         // colour of background
     double                              zoom;               // level of zoom
