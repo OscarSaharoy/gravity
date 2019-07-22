@@ -68,7 +68,7 @@ protected:
 
 
 class Gravity_Window: public Gtk::Window {
-
+	
 public:
 	Gravity_Window();           // constructor
 
