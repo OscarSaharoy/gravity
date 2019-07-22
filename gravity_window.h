@@ -79,35 +79,35 @@ public:
     void timescale_changed();   // function attached to timescale slider
 
 protected:
-    Gtk::Box          main_box;     // main box
-    Gtk::Box          side_box;     // side box
+    Gtk::Box      main_box;     // main box
+    Gtk::Box      side_box;     // side box
 
-    Gtk::Label        title;        // main title
-    Gtk::Button       reset;        // button to reset simulation
-    Gtk::Button       clear;        // button to clear bodies
-    Gtk::Button       pause;        // button to pause simulation
+    Gtk::Label    title;        // main title
+    Gtk::Button   reset;        // button to reset simulation
+    Gtk::Button   clear;        // button to clear bodies
+    Gtk::Button   pause;        // button to pause simulation
 
-    Gtk::Box          trail_box;    // box to hold trail length labels
-    Gtk::Label        traillabel;   // label for trail length slider
-    Gtk::Label        trailspacer;  // spacer for trail length labels
-    Gtk::Label        trailvalue;   // label for value of trail length
-    Gtk::Scale        traillength;  // controls trail length
+    Gtk::Box      trail_box;    // box to hold trail length labels
+    Gtk::Label    traillabel;   // label for trail length slider
+    Gtk::Label    trailspacer;  // spacer for trail length labels
+    Gtk::Label    trailvalue;   // label for value of trail length
+    Gtk::Scale    traillength;  // controls trail length
 
-    Gtk::Box          frame_box;    // box to hold framerate labels
-    Gtk::Label        framelabel;   // label for framerate slider
-    Gtk::Label        framespacer;  // spacer for framerate labels
-    Gtk::Label        framevalue;   // label for value of framerate
-    Gtk::Scale        framerate;    // controls simulation framerate
+    Gtk::Box      frame_box;    // box to hold framerate labels
+    Gtk::Label    framelabel;   // label for framerate slider
+    Gtk::Label    framespacer;  // spacer for framerate labels
+    Gtk::Label    framevalue;   // label for value of framerate
+    Gtk::Scale    framerate;    // controls simulation framerate
 
-    Gtk::Box          time_box;     // box to hold time scale labels
-    Gtk::Label        timelabel;    // label for time scale slider
-    Gtk::Label        timespacer;   // spacer for time scale labels
-    Gtk::Label        timevalue;    // label for value of time scale
-    Gtk::Scale        timescale;    // controls simulation time scaling
+    Gtk::Box      time_box;     // box to hold time scale labels
+    Gtk::Label    timelabel;    // label for time scale slider
+    Gtk::Label    timespacer;   // spacer for time scale labels
+    Gtk::Label    timevalue;    // label for value of time scale
+    Gtk::Scale    timescale;    // controls simulation time scaling
 
-    Gtk::Label        instructions; // label containing instructions for using the program
+    Gtk::Label    instructions; // label containing instructions for using the program
 
-    Gravity_Draw      gravity_draw; // draws and calculates gravity simulation
+    Gravity_Draw  gravity_draw; // draws and calculates gravity simulation
 
     Glib::RefPtr<Gtk::Adjustment> traillength_adjust_ptr; // pointer to adjustment for trailength slider
     Glib::RefPtr<Gtk::Adjustment> framerate_adjust_ptr;   // pointer to adjustment for framerate slider
