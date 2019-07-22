@@ -1,4 +1,4 @@
 # gravity
 2d n-body gravity simulation.
 
-![example](https://github.com/OscarSaharoy/gravity/blob/master/assets/gravity.gif)
+![example](https://github.com/OscarSaharoy/gravity/blob/master/assets/example.gif)
